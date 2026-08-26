@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>월급루팡 돈멍 대시보드</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --text-sub: #aaaaaa;
+            --accent: #4caf50;
+            --accent-hover: #45a049;
+            --danger: #f44336;
+            --danger-hover: #d32f2f;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--panel-bg);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        h1 { margin-top: 0; font-size: 1.2rem; color: var(--text-sub); }
+        .money-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+            transition: color 0.3s ease;
+        }
+        .d-day { color: #ffd700; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; }
+        
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background: #333;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* Info & Tiers */
+        .info-box {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .tier-title { color: #88ccff; font-weight: bold; margin-top: 10px; display: block; }
+
+        /* Inputs & Buttons */
+        .control-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #444;
+            background: #222;
+            color: white;
+            border-radius: 6px;
+        }
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-add { background: var(--accent); color: white; }
+        .btn-add:hover { background: var(--accent-hover); }
+        .btn-spend { background: var(--danger); color: white; }
+        .btn-spend:hover { background: var(--danger-hover); }
+        .btn-update { background: #2196f3; color: white; }
+        .btn-reset { background: #555; color: white; width: 100%; margin-top: 20px; }
+
+        /* Popup */
+        .popup-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        .popup-content {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+            border: 1px solid var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>내 통장 잔고</h1>
+    <div id="label_money" class="money-display">0.00 원</div>
+    <div class="progress-container"><div id="progress_bar" class="progress-bar"></div></div>
+    <div id="label_dday" class="d-day">1억까지: 계산 중...</div>
+
+    <div class="info-box">
+        <strong style="color:var(--text-sub);">월급 환산 정보</strong><br>
+        <span id="label_salary_info">초당: 0.00원 | 일당: 0원</span>
+    </div>
+
+    <div class="info-box" id="label_items">
+        <!-- 아이템 리스트가 여기에 렌더링 됩니다 -->
+    </div>
+
+    <div class="control-group">
+        <input type="number" id="input_extra" placeholder="금액 입력 (입금/지출)">
+        <button class="btn-add" onclick="addMoney()">입금</button>
+        <button class="btn-spend" onclick="spendMoney()">지출</button>
+    </div>
+
+    <div class="control-group">
+        <input type="number" id="input_salary" placeholder="새로운 월급 입력">
+        <button class="btn-update" onclick="updateSalary()">월급 갱신</button>
+    </div>
+
+    <button class="btn-reset" onclick="resetData()">데이터 초기화 (처음부터)</button>
+</div>
+
+<!-- 오프라인 보상 팝업 -->
+<div id="popup_layer" class="popup-overlay" onclick="closePopup()">
+    <div class="popup-content">
+        <h2>🎉 환영합니다! 🎉</h2>
+        <p>당신이 일하지 않는 동안에도 돈은 벌렸습니다.</p>
+        <h3 id="label_offline" style="color: var(--accent);">+ 0.00원 적립됨!</h3>
+        <p style="font-size: 0.8rem; color: #888;">(화면을 클릭하여 닫기)</p>
+    </div>
+</div>
+
+<script>
+    // --- 마스터 데이터 ---
+    const TARGET_MONEY = 100000000.0; // 1억
+    const SECONDS_IN_MONTH = 2592000.0;
+    
+    let monthly_salary = 2110000.0;
+    let total_accumulated = 0.0;
+    let bps = 0.0;
+    let display_money = 0.0;
+    
+    let lastFrameTime = performance.now();
+    let popupTimeout;
+
+    // --- DOM Elements ---
+    const elMoney = document.getElementById('label_money');
+    const elProgressBar = document.getElementById('progress_bar');
+    const elDDay = document.getElementById('label_dday');
+    const elSalaryInfo = document.getElementById('label_salary_info');
+    const elItems = document.getElementById('label_items');
+    const elInputExtra = document.getElementById('input_extra');
+    const elInputSalary = document.getElementById('input_salary');
+    const popupLayer = document.getElementById('popup_layer');
+    const elOffline = document.getElementById('label_offline');
+
+    // --- 초기화 ---
+    function init() {
+        loadData();
+        recalculateBPS();
+        requestAnimationFrame(processLoop);
+        
+        // 주기적으로 자동 저장 (5초마다)
+        setInterval(saveData, 5000);
+        // 창 닫힐 때 저장
+        window.addEventListener('beforeunload', saveData);
+    }
+
+    // --- 메인 루프 (Godot의 _process 대체) ---
+    function processLoop(currentTime) {
+        let delta = (currentTime - lastFrameTime) / 1000.0;
+        lastFrameTime = currentTime;
+
+        // 1. 실제 데이터 실시간 누적
+        total_accumulated += bps * delta;
+
+        // 2. 숫자 롤링 효과 (lerp)
+        display_money += (total_accumulated - display_money) * (10.0 * delta);
+
+        // 오차 범위 안으로 들어오면 값 고정
+        if (Math.abs(display_money - total_accumulated) < 0.1) {
+            display_money = total_accumulated;
+        }
+
+        updateUI();
+        requestAnimationFrame(processLoop);
+    }
+
+    // --- 핵심 로직 ---
+    function recalculateBPS() {
+        bps = monthly_salary / SECONDS_IN_MONTH;
+        let daily_wage = bps * 86400;
+        elSalaryInfo.innerHTML = `초당: ${bps.toFixed(2)}원 | 일당: ${formatMoney(daily_wage)}원`;
+    }
+
+    function updateUI() {
+        // 1. 상단 정보
+        elMoney.innerText = formatMoney(display_money) + " 원";
+        let progressPercent = Math.min((display_money / TARGET_MONEY) * 100, 100);
+        elProgressBar.style.width = progressPercent + "%";
+
+        // 2. 1억 카운트다운
+        let remaining = TARGET_MONEY - total_accumulated;
+        if (remaining > 0) {
+            if (bps > 0) {
+                let seconds_left = remaining / bps;
+                let d = Math.floor(seconds_left / 86400);
+                let h = Math.floor((seconds_left % 86400) / 3600);
+                let m = Math.floor((seconds_left % 3600) / 60);
+                let s = Math.floor(seconds_left % 60);
+                elDDay.innerText = `1억까지: ${d}일 ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} 남음`;
+                elDDay.style.color = "#ffd700";
+            } else {
+                elDDay.innerText = "수익을 설정하면 카운트다운이 시작됩니다.";
+            }
+        } else {
+            elDDay.innerText = "🎉 축하합니다! 1억 목표 달성! 🎉";
+            elDDay.style.color = "#4caf50";
+        }
+
+        // 3. 현실 고증 자산 리스트
+        let htmlItems = "";
+        
+        let kimbap = Math.floor(display_money / 1300);
+        let gukbab = Math.floor(display_money / 10000);
+        let chicken = Math.floor(display_money / 28000);
+        htmlItems += `<span class="tier-title">[ 생활 ]</span> 🍙김밥: ${kimbap}개 | 🍲국밥: ${gukbab}그릇 | 🍗치킨: ${chicken}마리<br>`;
+
+        let phone = (display_money / 1300000.0).toFixed(2);
+        let macbook = (display_money / 2690000.0).toFixed(3);
+        let luxury_bag = (display_money / 15800000.0).toFixed(4);
+        htmlItems += `<span class="tier-title">[ 사치 ]</span> 📱폰: ${phone}대 | 💻맥북: ${macbook}대 | 👜명품백: ${luxury_bag}개<br>`;
+
+        let scooter = (display_money / 1500000.0).toFixed(2);
+        let avante = (display_money / 33000000.0).toFixed(4);
+        let tesla = (display_money / 82000000.0).toFixed(5);
+        let porsche = (display_money / 240000000.0).toFixed(6);
+        htmlItems += `<span class="tier-title">[ 탈것 ]</span> 🛴킥보드: ${scooter}대 | 🚗아반떼: ${avante}대 | ⚡테슬라: ${tesla}대 | 🏎️포르쉐: ${porsche}대<br>`;
+
+        let studio = (display_money / 100000000.0).toFixed(5);
+        let gyeonggi = (display_money / 950000000.0).toFixed(6);
+        let seoul = (display_money / 1650000000.0).toFixed(7);
+        let gangnam = (display_money / 4800000000.0).toFixed(8);
+        htmlItems += `<span class="tier-title">[ 부동산 ]</span> 🏠전세: ${studio}채 | 🏙️경기: ${gyeonggi}채 | 🏢서울: ${seoul}채 | 👑강남: ${gangnam}채`;
+
+        elItems.innerHTML = htmlItems;
+    }
+
+    // --- 버튼 이벤트 ---
+    function addMoney() {
+        let val = parseFloat(elInputExtra.value);
+        if (val > 0) {
+            total_accumulated += val;
+            elInputExtra.value = "";
+            flashColor("#4caf50");
+            saveData();
+        }
+    }
+
+    function spendMoney() {
+        let val = parseFloat(elInputExtra.value);
+        if (val > 0) {
+            if (total_accumulated >= val) {
+                total_accumulated -= val;
+                elInputExtra.value = "";
+                flashColor("#f44336"); // 빨간색 피드백 (Tween 대체)
+                saveData();
+            } else {
+                let oldVal = elInputExtra.value;
+                elInputExtra.value = "잔액 부족!";
+                setTimeout(() => { if(elInputExtra.value === "잔액 부족!") elInputExtra.value = oldVal; }, 1000);
+            }
+        }
+    }
+
+    function updateSalary() {
+        let val = parseFloat(elInputSalary.value);
+        if (val > 0) {
+            monthly_salary = val;
+            recalculateBPS();
+            elInputSalary.value = "";
+            saveData();
+        }
+    }
+
+    function resetData() {
+        if (confirm("정말 통장을 0원으로 초기화하시겠습니까?")) {
+            total_accumulated = 0.0;
+            display_money = 0.0;
+            saveData();
+            updateUI();
+        }
+    }
+
+    // 시각적 피드백 (Godot의 Tween 모방)
+    function flashColor(color) {
+        elMoney.style.color = color;
+        setTimeout(() => { elMoney.style.color = "var(--text-main)"; }, 500);
+    }
+
+    // --- 데이터 관리 (LocalStorage) ---
+    function saveData() {
+        const data = {
+            total: total_accumulated,
+            salary: monthly_salary,
+            timestamp: Date.now() / 1000
+        };
+        localStorage.setItem('mining_v2026', JSON.stringify(data));
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem('mining_v2026');
+        if (saved) {
+            const data = JSON.parse(saved);
+            total_accumulated = data.total || 0;
+            monthly_salary = data.salary || 2110000;
+            display_money = total_accumulated; // 시작 시 바로 맞춤
+            
+            recalculateBPS();
+            
+            let lastTime = data.timestamp;
+            let elapsed = (Date.now() / 1000) - lastTime;
+            
+            if (elapsed > 0) {
+                let earned = elapsed * bps;
+                total_accumulated += earned;
+                showOfflinePopup(earned);
+            }
+        }
+    }
+
+    // --- 유틸 및 팝업 ---
+    function formatMoney(val) {
+        // 소수점 2자리로 고정하고 3자리마다 콤마
+        return val.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function showOfflinePopup(earned) {
+        if (earned < 10) return;
+        elOffline.innerText = "+ " + formatMoney(earned) + "원 적립됨!";
+        popupLayer.style.display = "flex";
+        
+        // 5초 뒤 자동 닫힘 (Godot의 Timer_Popup 모방)
+        popupTimeout = setTimeout(closePopup, 5000);
+    }
+
+    function closePopup() {
+        popupLayer.style.display = "none";
+        clearTimeout(popupTimeout);
+    }
+
+    // 실행
+    init();
+</script>
+</body>
+</html>
