@@ -3,136 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>월급루팡 돈멍 대시보드</title>
+    <title>월급루팡 대시보드</title>
     <style>
-        :root {
-            --bg-color: #121212;
-            --panel-bg: #1e1e1e;
-            --text-main: #ffffff;
-            --text-sub: #aaaaaa;
-            --accent: #4caf50;
-            --accent-hover: #45a049;
-            --danger: #f44336;
-            --danger-hover: #d32f2f;
-        }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 600px;
-            background: var(--panel-bg);
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        }
-        h1 { margin-top: 0; font-size: 1.2rem; color: var(--text-sub); }
-        .money-display {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 10px 0;
-            transition: color 0.3s ease;
-        }
-        .d-day { color: #ffd700; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; }
+        /* --- 기본 리셋 및 트랜지션 --- */
+        body { margin: 0; padding: 20px; display: flex; justify-content: center; transition: background 0.3s, color 0.3s; }
+        * { box-sizing: border-box; transition: background-color 0.3s, color 0.3s, border 0.3s, box-shadow 0.3s; }
         
-        /* Progress Bar */
-        .progress-container {
-            width: 100%;
-            height: 12px;
-            background: #333;
-            border-radius: 6px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        .progress-bar {
-            height: 100%;
-            background: var(--accent);
-            width: 0%;
-            transition: width 0.1s linear;
-        }
+        .container { width: 100%; max-width: 650px; padding: 24px; margin-bottom: 50px; }
+        .money-display { font-size: 2.5rem; font-weight: bold; margin: 10px 0; }
+        .progress-container { width: 100%; overflow: hidden; margin-bottom: 20px; }
+        .progress-bar { height: 100%; width: 0%; transition: width 0.1s linear; }
+        .info-box { padding: 15px; margin-bottom: 16px; line-height: 1.6; }
+        
+        .control-group { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+        input { flex: 1; padding: 10px; }
+        button { padding: 10px 16px; font-weight: bold; cursor: pointer; }
+        
+        /* 테마 선택기 */
+        .theme-selector { display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end; }
+        .theme-btn { padding: 6px 12px; font-size: 0.8rem; border-radius: 4px; border: none; cursor: pointer; }
 
-        /* Info & Tiers */
-        .info-box {
-            background: #2a2a2a;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-        .tier-title { color: #88ccff; font-weight: bold; margin-top: 10px; display: block; }
+        /* =========================================
+           테마 1: 다크 모드 (기본, 세련된 느낌)
+        ========================================= */
+        body.theme-dark { background-color: #121212; color: #ffffff; font-family: 'Pretendard', sans-serif; }
+        .theme-dark .container { background: #1e1e1e; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        .theme-dark h1 { color: #aaaaaa; }
+        .theme-dark .d-day { color: #ffd700; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; }
+        .theme-dark .progress-container { height: 12px; background: #333; border-radius: 6px; }
+        .theme-dark .progress-bar { background: #4caf50; }
+        .theme-dark .info-box { background: #2a2a2a; border-radius: 8px; font-size: 0.9rem; }
+        .theme-dark .tier-title { color: #88ccff; font-weight: bold; }
+        .theme-dark input { border: 1px solid #444; background: #222; color: white; border-radius: 6px; }
+        .theme-dark button { border: none; border-radius: 6px; }
+        .theme-dark .btn-add { background: #4caf50; color: white; }
+        .theme-dark .btn-spend { background: #f44336; color: white; }
+        .theme-dark .btn-update { background: #2196f3; color: white; }
+        .theme-dark .btn-reset { background: #555; color: white; width: 100%; margin-top: 10px; }
 
-        /* Inputs & Buttons */
-        .control-group {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #444;
-            background: #222;
-            color: white;
-            border-radius: 6px;
-        }
-        button {
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-add { background: var(--accent); color: white; }
-        .btn-add:hover { background: var(--accent-hover); }
-        .btn-spend { background: var(--danger); color: white; }
-        .btn-spend:hover { background: var(--danger-hover); }
-        .btn-update { background: #2196f3; color: white; }
-        .btn-reset { background: #555; color: white; width: 100%; margin-top: 20px; }
+        /* =========================================
+           테마 2: 아기자기 모드 (귀엽고 둥글둥글)
+        ========================================= */
+        body.theme-cute { background-color: #fff0f5; color: #555; font-family: 'Comic Sans MS', 'Pretendard', sans-serif; }
+        .theme-cute .container { background: #ffffff; border-radius: 30px; border: 3px solid #ffb6c1; box-shadow: 0 10px 20px rgba(255,182,193,0.3); }
+        .theme-cute h1 { color: #ff69b4; font-size: 1.4rem; text-align: center; }
+        .theme-cute .money-display { color: #ff1493; text-align: center; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        .theme-cute .d-day { color: #ff8c00; font-weight: bold; text-align: center; margin-bottom: 20px; }
+        .theme-cute .progress-container { height: 16px; background: #ffe4e1; border-radius: 20px; border: 1px solid #ffb6c1; }
+        .theme-cute .progress-bar { background: linear-gradient(90deg, #ffb6c1, #ff69b4); border-radius: 20px; }
+        .theme-cute .info-box { background: #fffafa; border: 2px dashed #ffb6c1; border-radius: 15px; }
+        .theme-cute .tier-title { color: #dda0dd; font-weight: bold; }
+        .theme-cute input { border: 2px solid #ffb6c1; background: #fff; color: #333; border-radius: 20px; padding: 10px 15px; }
+        .theme-cute button { border: none; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .theme-cute .btn-add { background: #87ceeb; color: white; }
+        .theme-cute .btn-spend { background: #ff9999; color: white; }
+        .theme-cute .btn-update { background: #dda0dd; color: white; }
+        .theme-cute .btn-reset { background: #ccc; color: white; width: 100%; margin-top: 10px; }
 
-        /* Popup */
-        .popup-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            display: none;
-        }
-        .popup-content {
-            background: var(--panel-bg);
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
-            border: 1px solid var(--accent);
-        }
+        /* =========================================
+           테마 3: 위장(엑셀) 모드 (안 들키는 UI)
+        ========================================= */
+        body.theme-disguise { background-color: #f3f2f1; color: #000; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; padding: 0; display: block; }
+        .theme-disguise .theme-selector { padding: 10px; background: #217346; margin: 0; }
+        .theme-disguise .theme-btn { border-radius: 0; background: #f3f2f1; color: #000; border: 1px solid #ccc; }
+        .theme-disguise .container { max-width: 100%; padding: 0; border: none; border-radius: 0; box-shadow: none; background: #fff; }
+        .theme-disguise h1 { background: #f3f2f1; padding: 10px; margin: 0; font-size: 0.9rem; font-weight: normal; border-bottom: 1px solid #ccc; color: #333; }
+        .theme-disguise .money-display { font-size: 1.2rem; font-family: Consolas, monospace; padding: 10px; margin: 0; border-bottom: 1px solid #ccc; }
+        .theme-disguise .d-day { font-size: 0.9rem; color: #333; padding: 10px; margin: 0; border-bottom: 1px solid #ccc; font-weight: normal; }
+        .theme-disguise .progress-container { height: 4px; background: #eee; border-radius: 0; margin: 0; }
+        .theme-disguise .progress-bar { background: #217346; } /* 엑셀 초록색 */
+        .theme-disguise .info-box { background: #fff; border-bottom: 1px solid #ccc; padding: 10px; border-radius: 0; margin: 0; font-size: 0.85rem; font-family: Consolas, monospace; }
+        .theme-disguise .tier-title { color: #000; font-weight: normal; }
+        .theme-disguise input { border: 1px solid #ccc; background: #fff; color: #000; border-radius: 0; padding: 5px; font-size: 0.9rem; }
+        .theme-disguise button { border: 1px solid #ccc; border-radius: 0; background: #f3f2f1; color: #000; padding: 5px 10px; font-size: 0.9rem; font-weight: normal; box-shadow: none; }
+        .theme-disguise .btn-add, .theme-disguise .btn-spend, .theme-disguise .btn-update, .theme-disguise .btn-reset { width: auto; margin: 0; }
+        .theme-disguise .control-group { padding: 10px; border-bottom: 1px solid #ccc; margin: 0; background: #faf9f8; }
+        /* 핵심: 위장 모드에서는 이모지 숨김 */
+        .theme-disguise .emoji { display: none; }
+        .theme-disguise .title-text::before { content: "Data Sheet 1 - "; }
+
     </style>
 </head>
-<body>
+<body class="theme-dark" id="body">
+
+<div class="theme-selector">
+    <button class="theme-btn" onclick="setTheme('theme-dark')">🌙 다크</button>
+    <button class="theme-btn" onclick="setTheme('theme-cute')">🌸 아기자기</button>
+    <button class="theme-btn" onclick="setTheme('theme-disguise')">📊 업무위장</button>
+</div>
 
 <div class="container">
-    <h1>내 통장 잔고</h1>
+    <h1 class="title-text">통장 잔고 모니터링</h1>
     <div id="label_money" class="money-display">0.00 원</div>
     <div class="progress-container"><div id="progress_bar" class="progress-bar"></div></div>
-    <div id="label_dday" class="d-day">1억까지: 계산 중...</div>
+    <div id="label_dday" class="d-day">목표까지: 계산 중...</div>
 
     <div class="info-box">
-        <strong style="color:var(--text-sub);">월급 환산 정보</strong><br>
+        <strong style="color:inherit;"><span class="emoji">💼</span> 실근무시간 기준 환산</strong><br>
         <span id="label_salary_info">초당: 0.00원 | 일당: 0원</span>
     </div>
 
     <div class="info-box" id="label_items">
-        <!-- 아이템 리스트가 여기에 렌더링 됩니다 -->
+        <!-- 리스트 렌더링 -->
     </div>
 
     <div class="control-group">
@@ -142,37 +114,30 @@
     </div>
 
     <div class="control-group">
-        <input type="number" id="input_salary" placeholder="새로운 월급 입력">
-        <button class="btn-update" onclick="updateSalary()">월급 갱신</button>
+        <input type="number" id="input_salary" placeholder="월급 갱신">
+        <input type="number" id="input_target" placeholder="목표 금액 갱신">
+        <button class="btn-update" onclick="updateSettings()">설정 적용</button>
     </div>
 
-    <button class="btn-reset" onclick="resetData()">데이터 초기화 (처음부터)</button>
-</div>
-
-<!-- 오프라인 보상 팝업 -->
-<div id="popup_layer" class="popup-overlay" onclick="closePopup()">
-    <div class="popup-content">
-        <h2>🎉 환영합니다! 🎉</h2>
-        <p>당신이 일하지 않는 동안에도 돈은 벌렸습니다.</p>
-        <h3 id="label_offline" style="color: var(--accent);">+ 0.00원 적립됨!</h3>
-        <p style="font-size: 0.8rem; color: #888;">(화면을 클릭하여 닫기)</p>
-    </div>
+    <button class="btn-reset" onclick="resetData()">데이터 전체 초기화</button>
 </div>
 
 <script>
     // --- 마스터 데이터 ---
-    const TARGET_MONEY = 100000000.0; // 1억
-    const SECONDS_IN_MONTH = 2592000.0;
+    // 기존(30일 24시간 = 2,592,000초) -> 개선(20일 8시간 = 576,000초)
+    // 초당 오르는 속도가 약 4.5배 빨라짐 (도파민 증가!)
+    const WORKING_SECONDS_IN_MONTH = 20 * 8 * 60 * 60; // 576,000초
     
+    let target_money = 100000000.0; // 기본 1억
     let monthly_salary = 2110000.0;
     let total_accumulated = 0.0;
     let bps = 0.0;
     let display_money = 0.0;
     
     let lastFrameTime = performance.now();
-    let popupTimeout;
 
     // --- DOM Elements ---
+    const elBody = document.getElementById('body');
     const elMoney = document.getElementById('label_money');
     const elProgressBar = document.getElementById('progress_bar');
     const elDDay = document.getElementById('label_dday');
@@ -180,33 +145,30 @@
     const elItems = document.getElementById('label_items');
     const elInputExtra = document.getElementById('input_extra');
     const elInputSalary = document.getElementById('input_salary');
-    const popupLayer = document.getElementById('popup_layer');
-    const elOffline = document.getElementById('label_offline');
+    const elInputTarget = document.getElementById('input_target');
 
-    // --- 초기화 ---
     function init() {
         loadData();
         recalculateBPS();
         requestAnimationFrame(processLoop);
-        
-        // 주기적으로 자동 저장 (5초마다)
         setInterval(saveData, 5000);
-        // 창 닫힐 때 저장
         window.addEventListener('beforeunload', saveData);
     }
 
-    // --- 메인 루프 (Godot의 _process 대체) ---
+    function setTheme(themeName) {
+        elBody.className = themeName;
+        localStorage.setItem('lupin_theme', themeName);
+        updateUI(); // 이모지 렌더링 갱신용
+    }
+
+    // --- 메인 루프 ---
     function processLoop(currentTime) {
         let delta = (currentTime - lastFrameTime) / 1000.0;
         lastFrameTime = currentTime;
 
-        // 1. 실제 데이터 실시간 누적
         total_accumulated += bps * delta;
-
-        // 2. 숫자 롤링 효과 (lerp)
         display_money += (total_accumulated - display_money) * (10.0 * delta);
 
-        // 오차 범위 안으로 들어오면 값 고정
         if (Math.abs(display_money - total_accumulated) < 0.1) {
             display_money = total_accumulated;
         }
@@ -217,61 +179,49 @@
 
     // --- 핵심 로직 ---
     function recalculateBPS() {
-        bps = monthly_salary / SECONDS_IN_MONTH;
-        let daily_wage = bps * 86400;
-        elSalaryInfo.innerHTML = `초당: ${bps.toFixed(2)}원 | 일당: ${formatMoney(daily_wage)}원`;
+        bps = monthly_salary / WORKING_SECONDS_IN_MONTH;
+        let daily_wage = bps * (8 * 60 * 60); // 8시간 기준 일당
+        elSalaryInfo.innerHTML = `초당: ${bps.toFixed(2)}원 | 일당(8h): ${formatMoney(daily_wage)}원`;
     }
 
     function updateUI() {
-        // 1. 상단 정보
         elMoney.innerText = formatMoney(display_money) + " 원";
-        let progressPercent = Math.min((display_money / TARGET_MONEY) * 100, 100);
+        
+        let progressPercent = Math.min((display_money / target_money) * 100, 100);
         elProgressBar.style.width = progressPercent + "%";
 
-        // 2. 1억 카운트다운
-        let remaining = TARGET_MONEY - total_accumulated;
+        // 카운트다운
+        let remaining = target_money - total_accumulated;
         if (remaining > 0) {
             if (bps > 0) {
+                // 남은 시간 = 남은금액 / 초당수익
+                // 여기서는 남은 일수를 8시간(근무시간) 기준으로 환산해서 보여줌
                 let seconds_left = remaining / bps;
-                let d = Math.floor(seconds_left / 86400);
-                let h = Math.floor((seconds_left % 86400) / 3600);
+                let d = Math.floor(seconds_left / (8 * 3600)); 
+                let h = Math.floor((seconds_left % (8 * 3600)) / 3600);
                 let m = Math.floor((seconds_left % 3600) / 60);
                 let s = Math.floor(seconds_left % 60);
-                elDDay.innerText = `1억까지: ${d}일 ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} 남음`;
-                elDDay.style.color = "#ffd700";
-            } else {
-                elDDay.innerText = "수익을 설정하면 카운트다운이 시작됩니다.";
+                
+                elDDay.innerText = `목표까지: 근무일 기준 ${d}일 ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} 남음`;
             }
         } else {
-            elDDay.innerText = "🎉 축하합니다! 1억 목표 달성! 🎉";
-            elDDay.style.color = "#4caf50";
+            elDDay.innerText = "목표 금액 달성 완료!";
         }
 
-        // 3. 현실 고증 자산 리스트
-        let htmlItems = "";
-        
+        // 아이템 리스트 렌더링
         let kimbap = Math.floor(display_money / 1300);
         let gukbab = Math.floor(display_money / 10000);
         let chicken = Math.floor(display_money / 28000);
-        htmlItems += `<span class="tier-title">[ 생활 ]</span> 🍙김밥: ${kimbap}개 | 🍲국밥: ${gukbab}그릇 | 🍗치킨: ${chicken}마리<br>`;
-
         let phone = (display_money / 1300000.0).toFixed(2);
-        let macbook = (display_money / 2690000.0).toFixed(3);
-        let luxury_bag = (display_money / 15800000.0).toFixed(4);
-        htmlItems += `<span class="tier-title">[ 사치 ]</span> 📱폰: ${phone}대 | 💻맥북: ${macbook}대 | 👜명품백: ${luxury_bag}개<br>`;
-
-        let scooter = (display_money / 1500000.0).toFixed(2);
         let avante = (display_money / 33000000.0).toFixed(4);
-        let tesla = (display_money / 82000000.0).toFixed(5);
-        let porsche = (display_money / 240000000.0).toFixed(6);
-        htmlItems += `<span class="tier-title">[ 탈것 ]</span> 🛴킥보드: ${scooter}대 | 🚗아반떼: ${avante}대 | ⚡테슬라: ${tesla}대 | 🏎️포르쉐: ${porsche}대<br>`;
+        let seoul = (display_money / 1650000000.0).toFixed(6);
 
-        let studio = (display_money / 100000000.0).toFixed(5);
-        let gyeonggi = (display_money / 950000000.0).toFixed(6);
-        let seoul = (display_money / 1650000000.0).toFixed(7);
-        let gangnam = (display_money / 4800000000.0).toFixed(8);
-        htmlItems += `<span class="tier-title">[ 부동산 ]</span> 🏠전세: ${studio}채 | 🏙️경기: ${gyeonggi}채 | 🏢서울: ${seoul}채 | 👑강남: ${gangnam}채`;
-
+        let htmlItems = `
+            <span class="tier-title">[ 생활비 ]</span> <span class="emoji">🍙</span>김밥: ${kimbap}개 | <span class="emoji">🍲</span>국밥: ${gukbab}그릇 | <span class="emoji">🍗</span>치킨: ${chicken}마리<br>
+            <span class="tier-title">[ 전자기기 ]</span> <span class="emoji">📱</span>스마트폰: ${phone}대<br>
+            <span class="tier-title">[ 모빌리티 ]</span> <span class="emoji">🚗</span>아반떼: ${avante}대<br>
+            <span class="tier-title">[ 부 동 산 ]</span> <span class="emoji">🏢</span>서울APT: ${seoul}채
+        `;
         elItems.innerHTML = htmlItems;
     }
 
@@ -281,104 +231,79 @@
         if (val > 0) {
             total_accumulated += val;
             elInputExtra.value = "";
-            flashColor("#4caf50");
             saveData();
         }
     }
 
     function spendMoney() {
         let val = parseFloat(elInputExtra.value);
-        if (val > 0) {
-            if (total_accumulated >= val) {
-                total_accumulated -= val;
-                elInputExtra.value = "";
-                flashColor("#f44336"); // 빨간색 피드백 (Tween 대체)
-                saveData();
-            } else {
-                let oldVal = elInputExtra.value;
-                elInputExtra.value = "잔액 부족!";
-                setTimeout(() => { if(elInputExtra.value === "잔액 부족!") elInputExtra.value = oldVal; }, 1000);
-            }
+        if (val > 0 && total_accumulated >= val) {
+            total_accumulated -= val;
+            elInputExtra.value = "";
+            saveData();
         }
     }
 
-    function updateSalary() {
-        let val = parseFloat(elInputSalary.value);
-        if (val > 0) {
-            monthly_salary = val;
-            recalculateBPS();
-            elInputSalary.value = "";
-            saveData();
-        }
+    function updateSettings() {
+        let sal = parseFloat(elInputSalary.value);
+        let tgt = parseFloat(elInputTarget.value);
+        
+        if (sal > 0) monthly_salary = sal;
+        if (tgt > 0) target_money = tgt;
+        
+        recalculateBPS();
+        elInputSalary.value = "";
+        elInputTarget.value = "";
+        saveData();
     }
 
     function resetData() {
-        if (confirm("정말 통장을 0원으로 초기화하시겠습니까?")) {
+        if (confirm("정말 잔고를 0원으로 초기화하시겠습니까? (설정은 유지됩니다)")) {
             total_accumulated = 0.0;
             display_money = 0.0;
             saveData();
-            updateUI();
         }
     }
 
-    // 시각적 피드백 (Godot의 Tween 모방)
-    function flashColor(color) {
-        elMoney.style.color = color;
-        setTimeout(() => { elMoney.style.color = "var(--text-main)"; }, 500);
-    }
-
-    // --- 데이터 관리 (LocalStorage) ---
+    // --- 데이터 관리 ---
     function saveData() {
         const data = {
             total: total_accumulated,
             salary: monthly_salary,
+            target: target_money,
             timestamp: Date.now() / 1000
         };
-        localStorage.setItem('mining_v2026', JSON.stringify(data));
+        localStorage.setItem('lupin_v2', JSON.stringify(data));
     }
 
     function loadData() {
-        const saved = localStorage.getItem('mining_v2026');
+        const savedTheme = localStorage.getItem('lupin_theme');
+        if (savedTheme) elBody.className = savedTheme;
+
+        const saved = localStorage.getItem('lupin_v2');
         if (saved) {
             const data = JSON.parse(saved);
             total_accumulated = data.total || 0;
             monthly_salary = data.salary || 2110000;
-            display_money = total_accumulated; // 시작 시 바로 맞춤
+            target_money = data.target || 100000000;
+            display_money = total_accumulated; 
             
             recalculateBPS();
             
             let lastTime = data.timestamp;
             let elapsed = (Date.now() / 1000) - lastTime;
             
+            // 오프라인 방치 수익 계산 (근무시간 BPS 적용)
             if (elapsed > 0) {
-                let earned = elapsed * bps;
-                total_accumulated += earned;
-                showOfflinePopup(earned);
+                total_accumulated += (elapsed * bps);
             }
         }
     }
 
-    // --- 유틸 및 팝업 ---
     function formatMoney(val) {
-        // 소수점 2자리로 고정하고 3자리마다 콤마
         return val.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    function showOfflinePopup(earned) {
-        if (earned < 10) return;
-        elOffline.innerText = "+ " + formatMoney(earned) + "원 적립됨!";
-        popupLayer.style.display = "flex";
-        
-        // 5초 뒤 자동 닫힘 (Godot의 Timer_Popup 모방)
-        popupTimeout = setTimeout(closePopup, 5000);
-    }
-
-    function closePopup() {
-        popupLayer.style.display = "none";
-        clearTimeout(popupTimeout);
-    }
-
-    // 실행
     init();
 </script>
 </body>
