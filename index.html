@@ -2,9 +2,15 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- 모바일 최적화 및 노치 디스플레이(안전 영역) 대응 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- iOS 및 안드로이드 웹앱(전체화면) 설정 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#121212">
+    <!-- 주소창 숨김을 위한 내장 Manifest (독립 앱 모드) -->
+    <link rel="manifest" href='data:application/manifest+json,%7B%22name%22%3A%22%EC%9B%94%EA%B8%89%EB%A3%A8%ED%8C%A1%22%2C%22short_name%22%3A%22%EB%A3%A8%ED%8C%A1%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23121212%22%2C%22theme_color%22%3A%22%23121212%22%7D'>
     <title>월급루팡</title>
     <style>
         /* --- 기본 리셋 및 변수 --- */
@@ -13,16 +19,17 @@
             --accent: #4caf50; --danger: #f44336; --bottom-bar: #000000; --warning: #ff9800;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
+        html, body {
             margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main);
             font-family: 'Pretendard', -apple-system, sans-serif;
-            height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+            /* 하단바 잘림 방지: 동적 뷰포트(100dvh) 적용 */
+            height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
             user-select: none; transition: background-color 0.3s, color 0.3s;
         }
 
         /* --- 🔥 영혼의 야근 모드 (불타는 이펙트) --- */
         body.overtime-active:not(.theme-disguise) {
-            background-color: #1a0505; /* 전체 화면 붉은 톤 */
+            background-color: #1a0505; 
             animation: pulseBg 1.2s infinite alternate ease-in-out;
         }
         body.overtime-active:not(.theme-disguise) .money-display {
@@ -43,23 +50,28 @@
             text-align: center; padding: 15px; font-weight: bold; font-size: 1.1rem;
             background: var(--bg-color); border-bottom: 1px solid #333;
             transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 10;
+            padding-top: env(safe-area-inset-top); /* 아이폰 노치 대응 */
         }
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            /* 하단 안전 영역(홈 인디케이터) 공간 확보 */
+            height: calc(60px + env(safe-area-inset-bottom)); 
             background: var(--bottom-bar); display: flex; justify-content: space-around;
-            align-items: center; border-top: 1px solid #333; padding-bottom: env(safe-area-inset-bottom);
+            align-items: flex-start; border-top: 1px solid #333; 
+            padding-bottom: env(safe-area-inset-bottom);
             transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 10;
         }
         body.ui-hidden .app-header { transform: translateY(-100%); }
         body.ui-hidden .bottom-nav { transform: translateY(100%); }
 
-        .content-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 80px; position: relative; }
+        /* 콘텐츠 영역 (스크롤 시 하단바에 안 가려지도록 여백 추가) */
+        .content-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); position: relative; }
         .tab-content { display: none; animation: fadeIn 0.3s; height: 100%; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 하단 탭 --- */
-        .nav-item { flex: 1; text-align: center; color: #888; font-size: 0.8rem; cursor: pointer; padding: 10px 0; transition: color 0.2s; }
+        /* --- 하단 탭 버튼 --- */
+        .nav-item { flex: 1; text-align: center; color: #888; font-size: 0.8rem; cursor: pointer; padding: 10px 0; transition: color 0.2s; height: 60px; }
         .nav-item.active { color: var(--accent); font-weight: bold; }
         .nav-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
         .text-disguise { display: none; }
@@ -91,7 +103,7 @@
             padding: 12px 20px; border-radius: 30px; display: flex; align-items: center; gap: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: top 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 1000; font-size: 0.9rem; white-space: nowrap;
         }
-        .toast.show { top: 20px; }
+        .toast.show { top: env(safe-area-inset-top, 20px); top: max(20px, env(safe-area-inset-top)); }
         .achievements-grid { display: grid; gap: 10px; }
         .achievement-card { background: var(--panel-bg); padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; opacity: 0.4; filter: grayscale(100%); transition: 0.3s; }
         .achievement-card.unlocked { opacity: 1; filter: grayscale(0%); border-left: 4px solid #ffd700; }
@@ -109,15 +121,15 @@
 
         /* --- 테마: 엑셀 위장 --- */
         body.theme-disguise { background-color: #ffffff; color: #000; font-family: 'Malgun Gothic', '맑은 고딕', monospace; --panel-bg: #fff; --bottom-bar: #f3f2f1; --accent: #217346; }
-        body.theme-disguise .app-header { text-align: left; background: #217346; color: white; border: none; font-size: 0.9rem; padding: 10px; font-weight: normal; }
+        body.theme-disguise .app-header { text-align: left; background: #217346; color: white; border: none; font-size: 0.9rem; padding: 10px; padding-top: max(10px, env(safe-area-inset-top)); font-weight: normal; }
         body.theme-disguise .money-display { font-size: 1.5rem; text-align: right; padding: 10px; border: 1px solid #ccc; background: #fff; margin: 10px 0; font-weight: normal; }
         body.theme-disguise .info-box { border: 1px solid #ccc; border-radius: 0; margin-bottom: 5px; font-size: 0.8rem; }
         body.theme-disguise .progress-container { height: 2px; border-radius: 0; background: #eee; }
         body.theme-disguise .emoji { display: none; }
         body.theme-disguise .status-badge { background: transparent; color: #000; padding: 0; font-weight: normal; border: none; border-radius: 0; margin-bottom: 5px; }
         body.theme-disguise .btn-orange { background: #e1e1e1; color: #000; border: 1px solid #ccc; box-shadow: none; font-weight: normal; }
-        body.theme-disguise .bottom-nav { justify-content: flex-start; gap: 2px; padding: 0 10px; height: 40px; }
-        body.theme-disguise .nav-item { flex: none; padding: 5px 15px; margin-top: 10px; background: #e1e1e1; border: 1px solid #ccc; border-bottom: none; border-radius: 4px 4px 0 0; font-size: 0.8rem; color: #555; }
+        body.theme-disguise .bottom-nav { justify-content: flex-start; gap: 2px; padding: 0 10px; }
+        body.theme-disguise .nav-item { flex: none; padding: 5px 15px; margin-top: 10px; background: #e1e1e1; border: 1px solid #ccc; border-bottom: none; border-radius: 4px 4px 0 0; font-size: 0.8rem; color: #555; height: 35px; }
         body.theme-disguise .nav-item.active { background: #fff; color: #217346; font-weight: bold; border-bottom: 1px solid #fff; margin-bottom: -1px; }
         body.theme-disguise .nav-icon { display: none; }
     </style>
@@ -295,7 +307,6 @@
         let delta = now - state.lastSaved;
         
         if (delta > 0) {
-            // 자정이 지나면 오늘 번 돈 초기화
             let currentDay = new Date().getDate();
             if (currentDay !== lastDay) { todayEarned = 0; lastDay = currentDay; }
 
@@ -318,7 +329,7 @@
         }
     }
 
-    // 밀린 정규 근무 시간 정밀 계산 (주말/퇴근 시간 철저히 제외)
+    // 밀린 정규 근무 시간 정밀 계산
     function getWorkingSeconds(startTstamp, endTstamp) {
         if (startTstamp >= endTstamp) return 0;
         let total = 0;
@@ -339,7 +350,6 @@
             let wStart = new Date(y, m, dt, sH, sM, 0).getTime() / 1000;
             let wEnd = new Date(y, m, dt, eH, eM, 0).getTime() / 1000;
             
-            // 만약 밤샘 근무(22:00 ~ 06:00 등)로 설정했다면 하루를 더해줌
             if (wEnd <= wStart) wEnd += 86400; 
             
             let nextDay = new Date(y, m, dt + 1, 0, 0, 0).getTime() / 1000;
@@ -366,7 +376,7 @@
         let startSec = parseInt(sArr[0]) * 3600 + parseInt(sArr[1]) * 60;
         let endSec = parseInt(eArr[0]) * 3600 + parseInt(eArr[1]) * 60;
         
-        if (endSec <= startSec) endSec += 86400; // 야간 교대
+        if (endSec <= startSec) endSec += 86400; 
         
         let isWorkDay = (day >= 1 && day <= 5);
         let isWorkTime = (currentSeconds >= startSec && currentSeconds < endSec);
@@ -382,13 +392,12 @@
 
     // --- 그래픽 및 UI 업데이트 루프 ---
     function processLoop() {
-        engineTick(); // 엔진 가동 (실제 돈 계산)
+        engineTick(); 
 
         let nowPerf = performance.now();
         let renderDelta = (nowPerf - lastRenderTime) / 1000.0;
         lastRenderTime = nowPerf;
 
-        // UI 뱃지 업데이트
         let status = checkWorkStatus();
         if (state.isOvertime) {
             currentBps = baseBps * 1.5;
@@ -401,7 +410,6 @@
             els.badge.innerText = "🔴 퇴근 완료 (수익 정지)"; els.badge.style.background = "#555";
         }
 
-        // 숫자 롤링 애니메이션 (부드럽게 쫓아감)
         let lerpFactor = Math.min(renderDelta * 10.0, 1.0);
         display_money += (state.total - display_money) * lerpFactor;
         if (Math.abs(display_money - state.total) < 0.01) display_money = state.total;
@@ -409,12 +417,10 @@
         updateUI();
         checkMoneyAchievements();
 
-        // 3초마다 안전 저장
         if (Date.now() - saveTimer > 3000) {
             saveData();
             saveTimer = Date.now();
         }
-
         requestAnimationFrame(processLoop);
     }
 
@@ -574,23 +580,21 @@
     }
     function formatMoneyNoDec(val) { return Math.floor(val).toLocaleString('ko-KR'); }
 
-    // 이번 v3 버전부터는 완전히 새로운 키를 써서 꼬여있는 기존 데이터를 덮어씌웁니다.
     function saveData() { 
-        localStorage.setItem('lupin_realtime_final_v3', JSON.stringify(state)); 
+        localStorage.setItem('lupin_v1_0_release', JSON.stringify(state)); 
     }
     function loadData() {
-        let saved = localStorage.getItem('lupin_realtime_final_v3');
+        let saved = localStorage.getItem('lupin_v1_0_release');
         if (saved) {
             let parsed = JSON.parse(saved);
             Object.assign(state, parsed);
         } else {
-            // 첫 실행 시
             state.lastSaved = Date.now() / 1000;
         }
         
         if(!state.unlockedAch) state.unlockedAch = []; 
         if(state.isOvertime === undefined) state.isOvertime = false;
-        display_money = state.total; // 켰을 때 잔고 갱신
+        display_money = state.total; 
         setTheme(state.theme);
     }
 
