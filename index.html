@@ -40,18 +40,17 @@
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 하단 탭 스타일 및 텍스트 전환 --- */
+        /* --- 하단 탭 --- */
         .nav-item { flex: 1; text-align: center; color: #888; font-size: 0.8rem; cursor: pointer; padding: 10px 0; transition: color 0.2s; }
         .nav-item.active { color: var(--accent); font-weight: bold; }
         .nav-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
-        
         .text-disguise { display: none; }
         body.theme-disguise .text-normal { display: none; }
         body.theme-disguise .text-disguise { display: inline; }
 
         /* --- 메인 UI --- */
         .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; background: #333; color: white; transition: all 0.3s; }
-        .money-display { font-size: 3rem; font-weight: bold; text-align: center; margin: 20px 0; color: inherit; letter-spacing: -1px; }
+        .money-display { font-size: 3rem; font-weight: bold; text-align: center; margin: 30px 0; color: inherit; letter-spacing: -1px; }
         .info-box { background: var(--panel-bg); padding: 15px; border-radius: 12px; margin-bottom: 15px; line-height: 1.6; font-size: 0.9rem; }
         .progress-container { width: 100%; height: 6px; background: #333; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
@@ -67,10 +66,10 @@
         .flex-row { display: flex; gap: 10px; }
         .label-sm { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; display: block; }
 
-        /* --- 업적 및 토스트 UI --- */
+        /* --- 업적 및 토스트 --- */
         .toast {
             position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.9); border: 1px solid #ffd700; color: white;
+            background: rgba(0,0,0,0.95); border: 1px solid #ffd700; color: white;
             padding: 12px 20px; border-radius: 30px; display: flex; align-items: center; gap: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: top 0.4s; z-index: 1000; font-size: 0.9rem; white-space: nowrap;
         }
@@ -99,7 +98,6 @@
         body.theme-disguise .emoji { display: none; }
         body.theme-disguise .status-badge { background: transparent; color: #000; padding: 0; font-weight: normal; border: none; border-radius: 0; margin-bottom: 5px; }
         body.theme-disguise .btn-orange { background: #e1e1e1; color: #000; border: 1px solid #ccc; box-shadow: none; font-weight: normal; }
-        
         body.theme-disguise .bottom-nav { justify-content: flex-start; gap: 2px; padding: 0 10px; height: 40px; }
         body.theme-disguise .nav-item { flex: none; padding: 5px 15px; margin-top: 10px; background: #e1e1e1; border: 1px solid #ccc; border-bottom: none; border-radius: 4px 4px 0 0; font-size: 0.8rem; color: #555; }
         body.theme-disguise .nav-item.active { background: #fff; color: #217346; font-weight: bold; border-bottom: 1px solid #fff; margin-bottom: -1px; }
@@ -109,11 +107,11 @@
 <body id="body">
 
 <div class="app-header" id="header"><span class="emoji">💸</span> 루팡 페이</div>
-<div id="toast" class="toast"><span class="emoji">🏆</span> <span id="toast-msg">업적 달성!</span></div>
+<div id="toast" class="toast"><span class="emoji">💰</span> <span id="toast-msg">알림</span></div>
 
 <div class="content-area" id="content-area">
     
-    <!-- 1. 메인 탭 -->
+    <!-- 1. 메인 탭 (초깔끔 모드) -->
     <div id="tab-main" class="tab-content active" onclick="toggleUI(event)">
         <p style="text-align:center; font-size:0.75rem; color:#888; margin:0;" class="emoji">👆 빈 화면을 탭하면 몰입 모드</p>
         
@@ -129,8 +127,6 @@
             <span id="label_salary_info" style="color:gray;">초당: 0.00원 | 오늘 번 돈: 계산 중</span><br>
             <span id="label_dday" style="color:var(--accent); font-weight:bold;">목표 계산 중...</span>
         </div>
-
-        <button id="btn_overtime" class="btn-orange" onclick="toggleOvertime(event)">🔥 야근 모드 켜기 (수당 1.5배)</button>
     </div>
 
     <!-- 2. 업적 탭 -->
@@ -141,33 +137,31 @@
 
     <!-- 3. 설정 탭 -->
     <div id="tab-settings" class="tab-content">
-        <h3>급여 설정</h3>
+        <h3>상태 제어 (야근/입출금)</h3>
+        <div class="info-box" style="border: 1px solid var(--warning);">
+            <button id="btn_overtime" class="btn-orange" onclick="toggleOvertime()">🔥 야근 모드 켜기 (수당 1.5배)</button>
+            <div class="flex-row" style="margin-top: 10px;">
+                <input type="number" id="inp_extra" placeholder="금액 입력" style="margin-bottom:0;">
+                <button class="btn-green" style="margin-bottom:0; width: 60px;" onclick="addMoney()">+</button>
+                <button class="btn-red" style="margin-bottom:0; width: 60px;" onclick="spendMoney()">-</button>
+            </div>
+        </div>
+
+        <h3>급여 및 시간 설정</h3>
         <div class="info-box">
             <span class="label-sm">기본 월급 (원)</span>
             <input type="number" id="inp_base" placeholder="예: 2500000">
-            <span class="label-sm">각종 수당 및 부가수익 (원)</span>
+            <span class="label-sm">각종 수당 (원)</span>
             <input type="number" id="inp_allowance" placeholder="예: 300000">
             <span class="label-sm">목표 금액 (원)</span>
             <input type="number" id="inp_target" placeholder="예: 100000000">
-        </div>
-
-        <h3>근무 시간 설정 (현실 동기화)</h3>
-        <div class="info-box">
+            
             <div class="flex-row">
                 <div style="flex:1;"><span class="label-sm">출근 시간</span><input type="time" id="inp_start"></div>
                 <div style="flex:1;"><span class="label-sm">퇴근 시간</span><input type="time" id="inp_end"></div>
             </div>
-            <p style="font-size:0.75rem; color:#888; margin-top:0;">* 설정된 시간에만 돈이 오릅니다.</p>
+            <p style="font-size:0.75rem; color:#888; margin-top:0;">* 설정된 시간에만 자동 적립됩니다.</p>
             <button class="btn-green" onclick="updateSettings()">데이터 및 시간 적용</button>
-        </div>
-
-        <h3>수동 입출금</h3>
-        <div class="info-box">
-            <input type="number" id="inp_extra" placeholder="금액 입력">
-            <div class="flex-row">
-                <button class="btn-green" onclick="addMoney()">+ 입금</button>
-                <button class="btn-red" onclick="spendMoney()">- 탕진</button>
-            </div>
         </div>
 
         <h3>테마</h3>
@@ -181,7 +175,7 @@
     </div>
 </div>
 
-<!-- 하단 네비게이션 (시트/일반 이름 전환 적용) -->
+<!-- 하단 네비게이션 -->
 <div class="bottom-nav" id="bottom-nav">
     <div class="nav-item active" onclick="switchTab('main', this)">
         <span class="nav-icon emoji">🏠</span>
@@ -198,7 +192,6 @@
 </div>
 
 <script>
-    // --- 30개 업적 데이터 ---
     const achievementsData = [
         { id: 1, icon: "👶", title: "첫 출근", desc: "앱을 처음 실행했습니다." },
         { id: 2, icon: "☕", title: "커피값 방어", desc: "4,500원 돌파" },
@@ -225,14 +218,13 @@
         { id: 23, icon: "🍲", title: "국밥 충", desc: "국밥 50그릇 살 돈 모음" },
         { id: 24, icon: "📱", title: "앱등이/삼엽충", desc: "스마트폰 1대 살 돈 모음" },
         { id: 25, icon: "🚗", title: "마이카 오너", desc: "아반떼 1대 살 돈 모음" },
-        { id: 26, icon: "🏢", title: "서울 입성 준비", desc: "서울 아파트 0.001채 (165만) 달성" },
-        { id: 27, icon: "♻️", title: "리셋 증후군", desc: "데이터 초기화 버튼 누름" },
-        { id: 28, icon: "👆", title: "광클러", desc: "입출금 버튼 10회 누름" },
+        { id: 26, icon: "🏢", title: "서울 입성 준비", desc: "서울 아파트 0.001채 달성" },
+        { id: 27, icon: "♻️", title: "리셋 증후군", desc: "데이터 초기화 누름" },
+        { id: 28, icon: "👆", title: "광클러", desc: "입출금 10회 누름" },
         { id: 29, icon: "🌙", title: "다크 템플러", desc: "다크 테마 사용" },
-        { id: 30, icon: "🏆", title: "루팡 마스터", desc: "다른 모든 업적 달성!" }
+        { id: 30, icon: "🏆", title: "루팡 마스터", desc: "모든 업적 달성!" }
     ];
 
-    // --- 상태 데이터 ---
     let state = {
         total: 0.0, baseSalary: 2500000, allowance: 200000, target: 100000000,
         startTime: "09:00", endTime: "18:00",
@@ -243,24 +235,17 @@
     let isOvertimeMode = false;
     let baseBps = 0.0;
     let currentBps = 0.0;
-    
     let display_money = 0.0;
     let lastFrameTime = performance.now();
     let uiHidden = false;
     let todayEarned = 0.0;
 
-    // --- DOM Elements ---
     const els = {
-        money: document.getElementById('label_money'),
-        bar: document.getElementById('progress_bar'),
-        dday: document.getElementById('label_dday'),
-        salInfo: document.getElementById('label_salary_info'),
-        badge: document.getElementById('status_badge'),
-        btnOvertime: document.getElementById('btn_overtime'),
-        body: document.getElementById('body'),
-        headerTitle: document.querySelector('.app-header'),
-        achList: document.getElementById('achievements-list'),
-        achCount: document.getElementById('ach-count')
+        money: document.getElementById('label_money'), bar: document.getElementById('progress_bar'),
+        dday: document.getElementById('label_dday'), salInfo: document.getElementById('label_salary_info'),
+        badge: document.getElementById('status_badge'), btnOvertime: document.getElementById('btn_overtime'),
+        body: document.getElementById('body'), headerTitle: document.querySelector('.app-header'),
+        achList: document.getElementById('achievements-list'), achCount: document.getElementById('ach-count')
     };
 
     function init() {
@@ -268,16 +253,72 @@
         updateFormValues();
         calculateBaseBps();
         renderAchievements();
-        checkAchievement(1); // 첫 실행 업적
+        checkAchievement(1); 
         
-        let elapsed = (Date.now()/1000) - state.lastSaved;
-        if(elapsed > 0 && checkWorkStatus().isWorking) { state.total += elapsed * baseBps; }
-        
+        // ★ 앱 실행 시 오프라인/백그라운드 수익 정밀 계산 ★
+        calculateOfflineEarnings();
+
         requestAnimationFrame(processLoop);
         setInterval(() => { saveData(); checkTimeAchievements(); }, 3000); 
     }
 
-    // --- 핵심 루프 ---
+    // ★ 탭을 숨기거나 다른 앱으로 갔을 때 돌아오면 수익 계산 ★
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            saveData();
+        } else {
+            calculateOfflineEarnings();
+            lastFrameTime = performance.now(); // 델타 타임 초기화 (안그러면 한 번에 폭주함)
+        }
+    });
+
+    // ★ 오프라인/백그라운드 근무 시간 정밀 계산 엔진 ★
+    function calculateOfflineEarnings() {
+        let now = Date.now() / 1000;
+        let elapsed = now - state.lastSaved;
+        
+        if (elapsed > 0 && baseBps > 0) {
+            let offlineSecs = getWorkingSeconds(state.lastSaved, now);
+            if (offlineSecs > 0) {
+                let earned = offlineSecs * baseBps;
+                state.total += earned;
+                display_money = state.total;
+                showToast(`백그라운드 적립: +${formatMoneyNoDec(earned)}원 (일한 시간 적용됨)`);
+            }
+        }
+        state.lastSaved = now;
+    }
+
+    // 평일 및 출퇴근 시간에 속하는 '실제 초'만 정확히 뽑아내는 함수
+    function getWorkingSeconds(startTstamp, endTstamp) {
+        if (startTstamp >= endTstamp) return 0;
+        let total = 0;
+        let curr = startTstamp;
+        let [sH, sM] = state.startTime.split(':').map(Number);
+        let [eH, eM] = state.endTime.split(':').map(Number);
+        
+        // 최대 한 달(방치 상한선) 방어 코드
+        if (endTstamp - startTstamp > 2592000) startTstamp = endTstamp - 2592000; 
+
+        while (curr < endTstamp) {
+            let d = new Date(curr * 1000);
+            let y = d.getFullYear(), m = d.getMonth(), dt = d.getDate(), day = d.getDay();
+            
+            let wStart = new Date(y, m, dt, sH, sM, 0).getTime() / 1000;
+            let wEnd = new Date(y, m, dt, eH, eM, 0).getTime() / 1000;
+            
+            if (day >= 1 && day <= 5) { // 월~금
+                let overlapStart = Math.max(curr, wStart);
+                let overlapEnd = Math.min(endTstamp, wEnd);
+                if (overlapStart < overlapEnd) total += (overlapEnd - overlapStart);
+            }
+            
+            let nextDay = new Date(y, m, dt + 1, 0, 0, 0).getTime() / 1000;
+            curr = nextDay;
+        }
+        return total;
+    }
+
     function processLoop(currentTime) {
         let delta = (currentTime - lastFrameTime) / 1000.0;
         lastFrameTime = currentTime;
@@ -303,11 +344,10 @@
         if (Math.abs(display_money - state.total) < 0.01) display_money = state.total;
 
         updateUI();
-        checkMoneyAchievements(); // 돈 관련 업적 지속 체크
+        checkMoneyAchievements();
         requestAnimationFrame(processLoop);
     }
 
-    // 근무 시간 체크
     function checkWorkStatus() {
         let now = new Date();
         let day = now.getDay();
@@ -318,19 +358,14 @@
         
         let isWorkDay = (day >= 1 && day <= 5);
         let isWorkTime = (currentSeconds >= startSec && currentSeconds < endSec);
-
         return { isWorking: isWorkDay && isWorkTime, dailyTotalSeconds: endSec - startSec };
     }
 
     function calculateBaseBps() {
-        let totalMonthlySalary = state.baseSalary + state.allowance;
         let ds = checkWorkStatus().dailyTotalSeconds;
-        if(ds <= 0) ds = 28800; // 에러 방지 (기본 8시간)
-        baseBps = totalMonthlySalary / (20 * ds);
-        
-        if(baseBps >= 1) checkAchievement(11);
-        if(baseBps >= 3) checkAchievement(12);
-        if(baseBps >= 10) checkAchievement(13);
+        if(ds <= 0) ds = 28800; 
+        baseBps = (state.baseSalary + state.allowance) / (20 * ds);
+        if(baseBps >= 1) checkAchievement(11); if(baseBps >= 3) checkAchievement(12); if(baseBps >= 10) checkAchievement(13);
     }
 
     function updateUI() {
@@ -347,15 +382,15 @@
         }
     }
 
-    // --- UI 동작 ---
-    function toggleOvertime(e) {
-        e.stopPropagation(); 
+    function toggleOvertime() {
         isOvertimeMode = !isOvertimeMode;
         if(isOvertimeMode) {
             els.btnOvertime.innerText = "🛑 야근 모드 종료 (집에 가자)"; els.btnOvertime.style.background = "#555"; els.btnOvertime.style.color = "#fff";
         } else {
             els.btnOvertime.innerText = "🔥 야근 모드 켜기 (수당 1.5배)"; els.btnOvertime.style.background = "var(--warning)"; els.btnOvertime.style.color = "#000";
+            if(state.theme === 'disguise') els.btnOvertime.innerText = "[+] 추가 수당 계산";
         }
+        switchTab('main', document.querySelectorAll('.nav-item')[0]); // 메인으로 돌려보냄
     }
 
     function switchTab(tabId, btnElement) {
@@ -373,7 +408,6 @@
         else els.body.classList.remove('ui-hidden');
     }
 
-    // --- 설정/입출금 로직 ---
     function updateSettings() {
         state.baseSalary = parseFloat(document.getElementById('inp_base').value) || 0;
         state.allowance = parseFloat(document.getElementById('inp_allowance').value) || 0;
@@ -381,10 +415,8 @@
         state.startTime = document.getElementById('inp_start').value;
         state.endTime = document.getElementById('inp_end').value;
         
-        calculateBaseBps();
-        checkAchievement(16); checkAchievement(17);
-        alert("근무시간 및 급여 설정이 저장되었습니다.");
-        saveData(); switchTab('main', document.querySelectorAll('.nav-item')[0]); 
+        calculateBaseBps(); checkAchievement(16); checkAchievement(17);
+        alert("저장되었습니다."); saveData(); switchTab('main', document.querySelectorAll('.nav-item')[0]); 
     }
 
     function addMoney() {
@@ -409,8 +441,7 @@
         if(theme === 'disguise') {
             els.body.classList.add('theme-disguise');
             els.headerTitle.innerText = "Data Sheet - Book1.xlsx";
-            els.btnOvertime.innerText = "[+] 추가 수당 계산";
-            checkAchievement(18);
+            els.btnOvertime.innerText = "[+] 추가 수당 계산"; checkAchievement(18);
         } else {
             els.headerTitle.innerHTML = '<span class="emoji">💸</span> 루팡 페이';
             els.btnOvertime.innerText = isOvertimeMode ? "🛑 야근 종료" : "🔥 야근 모드 켜기 (수당 1.5배)";
@@ -420,7 +451,6 @@
         state.theme = theme; saveData();
     }
 
-    // --- 업적 시스템 로직 ---
     function renderAchievements() {
         els.achList.innerHTML = achievementsData.map(a => `
             <div class="achievement-card ${state.unlockedAch.includes(a.id) ? 'unlocked' : ''}" id="ach-${a.id}">
@@ -435,12 +465,10 @@
         if (!state.unlockedAch.includes(id)) {
             state.unlockedAch.push(id);
             let ach = achievementsData.find(a => a.id === id);
-            showToast(`${ach.icon} [${ach.title}] 달성!`);
-            
+            showToast(`🏆 [${ach.title}] 달성!`);
             let card = document.getElementById(`ach-${id}`);
             if(card) card.classList.add('unlocked');
             els.achCount.innerText = state.unlockedAch.length;
-
             if (state.unlockedAch.length === 29) checkAchievement(30); 
             saveData();
         }
@@ -448,29 +476,19 @@
 
     function checkMoneyAchievements() {
         let t = state.total;
-        if(t >= 4500) checkAchievement(2);
-        if(t >= 10000) checkAchievement(3);
-        if(t >= 20000) checkAchievement(4);
-        if(t >= 50000) checkAchievement(5);
-        if(t >= 250000) checkAchievement(6);
-        if(t >= 700000) checkAchievement(7);
-        if(t >= 1000000) checkAchievement(8);
-        if(t >= 10000000) checkAchievement(9);
-        if(t >= 100000000) checkAchievement(10);
-        if(t >= 1300*100) checkAchievement(22);
-        if(t >= 10000*50) checkAchievement(23);
-        if(t >= 1300000) checkAchievement(24);
-        if(t >= 33000000) checkAchievement(25);
-        if(t >= 1650000) checkAchievement(26); 
+        if(t >= 4500) checkAchievement(2); if(t >= 10000) checkAchievement(3);
+        if(t >= 20000) checkAchievement(4); if(t >= 50000) checkAchievement(5);
+        if(t >= 250000) checkAchievement(6); if(t >= 700000) checkAchievement(7);
+        if(t >= 1000000) checkAchievement(8); if(t >= 10000000) checkAchievement(9);
+        if(t >= 100000000) checkAchievement(10); if(t >= 1300*100) checkAchievement(22);
+        if(t >= 10000*50) checkAchievement(23); if(t >= 1300000) checkAchievement(24);
+        if(t >= 33000000) checkAchievement(25); if(t >= 1650000) checkAchievement(26); 
     }
 
     function checkTimeAchievements() {
         let elapsed = (Date.now() - state.appStartTime) / 1000;
-        if(elapsed >= 60) checkAchievement(19);
-        if(elapsed >= 600) checkAchievement(20);
-        if(elapsed >= 3600) checkAchievement(21);
+        if(elapsed >= 60) checkAchievement(19); if(elapsed >= 600) checkAchievement(20); if(elapsed >= 3600) checkAchievement(21);
     }
-    
     function checkClickAch() { if(state.clickCount >= 10) checkAchievement(28); }
 
     let tTime;
@@ -479,10 +497,9 @@
         document.getElementById('toast-msg').innerText = msg;
         t.classList.add('show');
         clearTimeout(tTime);
-        tTime = setTimeout(() => t.classList.remove('show'), 3000);
+        tTime = setTimeout(() => t.classList.remove('show'), 4000);
     }
 
-    // --- 유틸 및 데이터 관리 ---
     function updateFormValues() {
         document.getElementById('inp_base').value = state.baseSalary;
         document.getElementById('inp_allowance').value = state.allowance;
@@ -500,14 +517,14 @@
 
     function saveData() { 
         state.lastSaved = Date.now()/1000; 
-        localStorage.setItem('lupin_realtime', JSON.stringify(state)); 
+        localStorage.setItem('lupin_realtime_final', JSON.stringify(state)); 
     }
     function loadData() {
-        let saved = localStorage.getItem('lupin_realtime');
+        let saved = localStorage.getItem('lupin_realtime_final');
         if (saved) {
             let parsed = JSON.parse(saved);
             Object.assign(state, parsed);
-            if(!state.unlockedAch) state.unlockedAch = []; // 기존 데이터 호환 패치
+            if(!state.unlockedAch) state.unlockedAch = []; 
             display_money = state.total;
             setTheme(state.theme);
         }
