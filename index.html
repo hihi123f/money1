@@ -20,6 +20,24 @@
             user-select: none; transition: background-color 0.3s, color 0.3s;
         }
 
+        /* --- 🔥 야근 모드 (불타는 이펙트) --- */
+        /* 위장 모드가 아닐 때만 발동 */
+        body.overtime-active:not(.theme-disguise) {
+            animation: pulseBg 1.5s infinite alternate ease-in-out;
+        }
+        body.overtime-active:not(.theme-disguise) .money-display {
+            animation: burnText 1s infinite alternate ease-in-out;
+        }
+        
+        @keyframes pulseBg {
+            0% { box-shadow: inset 0 0 0px rgba(255, 30, 0, 0); }
+            100% { box-shadow: inset 0 0 80px rgba(255, 30, 0, 0.25); }
+        }
+        @keyframes burnText {
+            0% { color: #ff9800; text-shadow: 0 0 10px rgba(255, 87, 34, 0.5); transform: scale(1); }
+            100% { color: #ff3d00; text-shadow: 0 0 20px rgba(255, 87, 34, 0.8), 0 0 35px rgba(255, 0, 0, 0.6); transform: scale(1.02); }
+        }
+
         /* --- 몰입모드 (UI 숨김) --- */
         .app-header {
             text-align: center; padding: 15px; font-weight: bold; font-size: 1.1rem;
@@ -50,7 +68,7 @@
 
         /* --- 메인 UI --- */
         .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; background: #333; color: white; transition: all 0.3s; }
-        .money-display { font-size: 3rem; font-weight: bold; text-align: center; margin: 30px 0; color: inherit; letter-spacing: -1px; }
+        .money-display { font-size: 3rem; font-weight: bold; text-align: center; margin: 30px 0; color: inherit; letter-spacing: -1px; transition: all 0.2s; }
         .info-box { background: var(--panel-bg); padding: 15px; border-radius: 12px; margin-bottom: 15px; line-height: 1.6; font-size: 0.9rem; }
         .progress-container { width: 100%; height: 6px; background: #333; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
@@ -111,7 +129,7 @@
 
 <div class="content-area" id="content-area">
     
-    <!-- 1. 메인 탭 (초깔끔 모드) -->
+    <!-- 1. 메인 탭 -->
     <div id="tab-main" class="tab-content active" onclick="toggleUI(event)">
         <p style="text-align:center; font-size:0.75rem; color:#888; margin:0;" class="emoji">👆 빈 화면을 탭하면 몰입 모드</p>
         
@@ -141,7 +159,7 @@
         <div class="info-box" style="border: 1px solid var(--warning);">
             <button id="btn_overtime" class="btn-orange" onclick="toggleOvertime()">🔥 야근 모드 켜기 (수당 1.5배)</button>
             <div class="flex-row" style="margin-top: 10px;">
-                <input type="number" id="inp_extra" placeholder="금액 입력" style="margin-bottom:0;">
+                <input type="number" id="inp_extra" placeholder="수동 금액 입력" style="margin-bottom:0;">
                 <button class="btn-green" style="margin-bottom:0; width: 60px;" onclick="addMoney()">+</button>
                 <button class="btn-red" style="margin-bottom:0; width: 60px;" onclick="spendMoney()">-</button>
             </div>
@@ -160,7 +178,7 @@
                 <div style="flex:1;"><span class="label-sm">출근 시간</span><input type="time" id="inp_start"></div>
                 <div style="flex:1;"><span class="label-sm">퇴근 시간</span><input type="time" id="inp_end"></div>
             </div>
-            <p style="font-size:0.75rem; color:#888; margin-top:0;">* 설정된 시간에만 자동 적립됩니다.</p>
+            <p style="font-size:0.75rem; color:#888; margin-top:0;">* 평일 설정된 시간에만 자동 적립됩니다.</p>
             <button class="btn-green" onclick="updateSettings()">데이터 및 시간 적용</button>
         </div>
 
@@ -229,10 +247,9 @@
         total: 0.0, baseSalary: 2500000, allowance: 200000, target: 100000000,
         startTime: "09:00", endTime: "18:00",
         unlockedAch: [], clickCount: 0, appStartTime: Date.now(),
-        lastSaved: Date.now() / 1000, theme: 'dark'
+        lastSaved: Date.now() / 1000, theme: 'dark', isOvertime: false
     };
     
-    let isOvertimeMode = false;
     let baseBps = 0.0;
     let currentBps = 0.0;
     let display_money = 0.0;
@@ -255,41 +272,49 @@
         renderAchievements();
         checkAchievement(1); 
         
-        // ★ 앱 실행 시 오프라인/백그라운드 수익 정밀 계산 ★
+        applyOvertimeUI();
         calculateOfflineEarnings();
 
         requestAnimationFrame(processLoop);
         setInterval(() => { saveData(); checkTimeAchievements(); }, 3000); 
     }
 
-    // ★ 탭을 숨기거나 다른 앱으로 갔을 때 돌아오면 수익 계산 ★
     document.addEventListener("visibilitychange", () => {
         if (document.hidden) {
             saveData();
         } else {
             calculateOfflineEarnings();
-            lastFrameTime = performance.now(); // 델타 타임 초기화 (안그러면 한 번에 폭주함)
+            lastFrameTime = performance.now(); 
         }
     });
 
-    // ★ 오프라인/백그라운드 근무 시간 정밀 계산 엔진 ★
+    // ★ 0원 팝업 버그 해결 및 야근 모드 오프라인 적립 추가 ★
     function calculateOfflineEarnings() {
         let now = Date.now() / 1000;
         let elapsed = now - state.lastSaved;
         
-        if (elapsed > 0 && baseBps > 0) {
-            let offlineSecs = getWorkingSeconds(state.lastSaved, now);
-            if (offlineSecs > 0) {
-                let earned = offlineSecs * baseBps;
+        if (elapsed > 2 && baseBps > 0) { // 2초 이상 지났을 때만 계산
+            let earned = 0;
+            
+            // 야근 모드가 켜져있었다면 시간 상관없이 1.5배로 풀가동
+            if (state.isOvertime) {
+                earned = elapsed * (baseBps * 1.5);
+            } else {
+                // 아니면 실제 일한 평일 시간만 계산
+                let offlineSecs = getWorkingSeconds(state.lastSaved, now);
+                earned = offlineSecs * baseBps;
+            }
+            
+            // 번 돈이 1원 이상일 때만 알림을 띄워서 '0원 팝업' 방지
+            if (earned >= 1) {
                 state.total += earned;
                 display_money = state.total;
-                showToast(`백그라운드 적립: +${formatMoneyNoDec(earned)}원 (일한 시간 적용됨)`);
+                showToast(`백그라운드 적립: +${formatMoneyWithDec(earned)}원!`);
             }
         }
         state.lastSaved = now;
     }
 
-    // 평일 및 출퇴근 시간에 속하는 '실제 초'만 정확히 뽑아내는 함수
     function getWorkingSeconds(startTstamp, endTstamp) {
         if (startTstamp >= endTstamp) return 0;
         let total = 0;
@@ -297,7 +322,6 @@
         let [sH, sM] = state.startTime.split(':').map(Number);
         let [eH, eM] = state.endTime.split(':').map(Number);
         
-        // 최대 한 달(방치 상한선) 방어 코드
         if (endTstamp - startTstamp > 2592000) startTstamp = endTstamp - 2592000; 
 
         while (curr < endTstamp) {
@@ -312,7 +336,6 @@
                 let overlapEnd = Math.min(endTstamp, wEnd);
                 if (overlapStart < overlapEnd) total += (overlapEnd - overlapStart);
             }
-            
             let nextDay = new Date(y, m, dt + 1, 0, 0, 0).getTime() / 1000;
             curr = nextDay;
         }
@@ -325,9 +348,9 @@
 
         let status = checkWorkStatus();
         
-        if (isOvertimeMode) {
+        if (state.isOvertime) {
             currentBps = baseBps * 1.5;
-            els.badge.innerText = "🔥 야근 중 (1.5배 수당)"; els.badge.style.background = "var(--danger)";
+            els.badge.innerText = "🔥 야근/특근 중 (수당 1.5배)"; els.badge.style.background = "var(--danger)";
         } else if (status.isWorking) {
             currentBps = baseBps;
             els.badge.innerText = "🟢 정규 근무 중"; els.badge.style.background = "var(--accent)";
@@ -382,15 +405,23 @@
         }
     }
 
+    // ★ 야근 모드 토글 (애니메이션 클래스 연동) ★
     function toggleOvertime() {
-        isOvertimeMode = !isOvertimeMode;
-        if(isOvertimeMode) {
+        state.isOvertime = !state.isOvertime;
+        applyOvertimeUI();
+        saveData();
+        switchTab('main', document.querySelectorAll('.nav-item')[0]);
+    }
+
+    function applyOvertimeUI() {
+        if(state.isOvertime) {
             els.btnOvertime.innerText = "🛑 야근 모드 종료 (집에 가자)"; els.btnOvertime.style.background = "#555"; els.btnOvertime.style.color = "#fff";
+            els.body.classList.add('overtime-active');
         } else {
             els.btnOvertime.innerText = "🔥 야근 모드 켜기 (수당 1.5배)"; els.btnOvertime.style.background = "var(--warning)"; els.btnOvertime.style.color = "#000";
             if(state.theme === 'disguise') els.btnOvertime.innerText = "[+] 추가 수당 계산";
+            els.body.classList.remove('overtime-active');
         }
-        switchTab('main', document.querySelectorAll('.nav-item')[0]); // 메인으로 돌려보냄
     }
 
     function switchTab(tabId, btnElement) {
@@ -437,6 +468,8 @@
 
     function setTheme(theme) {
         els.body.className = '';
+        if(state.isOvertime) els.body.classList.add('overtime-active');
+        
         if(theme === 'cute') els.body.classList.add('theme-cute');
         if(theme === 'disguise') {
             els.body.classList.add('theme-disguise');
@@ -444,7 +477,7 @@
             els.btnOvertime.innerText = "[+] 추가 수당 계산"; checkAchievement(18);
         } else {
             els.headerTitle.innerHTML = '<span class="emoji">💸</span> 루팡 페이';
-            els.btnOvertime.innerText = isOvertimeMode ? "🛑 야근 종료" : "🔥 야근 모드 켜기 (수당 1.5배)";
+            if(!state.isOvertime) els.btnOvertime.innerText = "🔥 야근 모드 켜기 (수당 1.5배)";
             if(theme === 'dark') checkAchievement(29);
         }
         if(uiHidden) els.body.classList.add('ui-hidden');
@@ -525,6 +558,7 @@
             let parsed = JSON.parse(saved);
             Object.assign(state, parsed);
             if(!state.unlockedAch) state.unlockedAch = []; 
+            if(state.isOvertime === undefined) state.isOvertime = false;
             display_money = state.total;
             setTheme(state.theme);
         }
